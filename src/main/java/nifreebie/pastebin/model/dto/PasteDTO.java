@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
 @Builder
 public class PasteDTO implements Serializable {
     private String text;
+    private String displayUrl;
     private Language language;
     private boolean isPrivate;
     private OffsetDateTime expireAt;

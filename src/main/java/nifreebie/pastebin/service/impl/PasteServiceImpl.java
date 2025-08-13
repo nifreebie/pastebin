@@ -2,9 +2,11 @@ package nifreebie.pastebin.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import nifreebie.pastebin.domain.Paste;
+import nifreebie.pastebin.domain.User;
 import nifreebie.pastebin.model.dto.PasteDTO;
 import nifreebie.pastebin.model.request.CreatePasteRequest;
 import nifreebie.pastebin.repository.PastesRepository;
+import nifreebie.pastebin.repository.UserRepository;
 import nifreebie.pastebin.service.HashService;
 import nifreebie.pastebin.service.MinioService;
 import nifreebie.pastebin.service.PasteService;
@@ -13,9 +15,12 @@ import nifreebie.pastebin.util.NotFoundException;
 import nifreebie.pastebin.util.PasswordUtil;
 import nifreebie.pastebin.util.PasteIsExpiredException;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -24,6 +29,7 @@ public class PasteServiceImpl implements PasteService {
     private final PastesRepository pastesRepository;
     private final MinioService minioService;
     private final HashService hashService;
+    private final UserRepository userRepository;
 
     @Override
     public String createPaste(CreatePasteRequest request) {
@@ -40,6 +46,10 @@ public class PasteServiceImpl implements PasteService {
         String minioKey = "pastes/" + paste.getDisplayUrl() + ".txt";
         minioService.uploadFile(minioKey, request.getText());
         paste.setMinioKey(minioKey);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = userRepository.findByUsername(auth.getName()).orElseThrow(NotFoundException::new);
+        paste.setOwner(user);
 
         return pastesRepository.save(paste).getDisplayUrl();
     }
@@ -68,6 +78,21 @@ public class PasteServiceImpl implements PasteService {
                 .language(paste.getLanguage())
                 .isPrivate(paste.getIsPrivate())
                 .expireAt(paste.getExpiryDate())
+                .displayUrl(paste.getDisplayUrl())
                 .build();
+    }
+
+    @Override
+    public List<PasteDTO> getMyPastes() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return pastesRepository.findByOwnerUsername(username).stream()
+                .map(paste -> PasteDTO.builder()
+                        .text(null)
+                        .language(paste.getLanguage())
+                        .isPrivate(paste.getIsPrivate())
+                        .expireAt(paste.getExpiryDate())
+                        .displayUrl(paste.getDisplayUrl())
+                        .build())
+                .toList();
     }
 }

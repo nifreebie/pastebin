@@ -20,4 +20,6 @@ public interface PastesRepository extends JpaRepository<Paste, UUID> {
     @Modifying
     @Query(value = "DELETE FROM pastes WHERE expiry_date < NOW()", nativeQuery = true)
     void deleteExpiredPastes();
+
+    List<Paste> findByOwnerUsername(String username);
 }

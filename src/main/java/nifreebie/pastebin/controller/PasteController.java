@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/pastes")
 @RequiredArgsConstructor
@@ -27,5 +29,10 @@ public class PasteController {
             @RequestHeader(value = "X-Paste-Password", required = false) String password) {
         PasteDTO response = pasteService.getPasteByDisplayUrl(displayUrl, password);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<PasteDTO>> getMyPastes() {
+        return ResponseEntity.ok(pasteService.getMyPastes());
     }
 }

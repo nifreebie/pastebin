@@ -40,4 +40,8 @@ public class Paste {
     private OffsetDateTime dateCreated;
 
     private OffsetDateTime expiryDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 }
